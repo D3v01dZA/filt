@@ -1,0 +1,9 @@
+@host = http://localhost:7000
+
+### Login
+POST {{host}}/api/auth/login
+
+{"username": "test", "password": "test"}
+
+### Logout
+GET {{host}}/api/auth/logout
