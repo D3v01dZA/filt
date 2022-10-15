@@ -21,7 +21,16 @@ Content-Type: application/json
 POST {{host}}/auth/logout
 
 ### Search
-POST {{host}}/api/search
+POST {{host}}/api/directory/search
+Content-Type: application/json
+
+{
+    "query": "game",
+    "page": 1
+}
 
 ### Movie
-GET {{host}}/api/movie
+GET {{host}}/api/directory/movie/80274
+
+### Movie
+GET {{host}}/api/directory/series/1399

@@ -1,14 +1,17 @@
 package net.filt
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.github.cdimascio.dotenv.Dotenv
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
 import io.javalin.json.JavalinJackson
 import net.filt.handler.*
 import net.filt.model.initDB
-import net.filt.tmdb.TmdbApi
+import net.filt.source.tmdb.TmdbApi
 import okhttp3.OkHttpClient
+
+const val ID = "id"
 
 fun main() {
     val dotenv = Dotenv.load()
@@ -16,7 +19,7 @@ fun main() {
     initDB(dotenv)
     val httpClient = OkHttpClient()
     val tmdbApi = TmdbApi(dotenv, httpClient, javalinJackson)
-    val miscHandler = MiscHandler(tmdbApi)
+    val directoryHandler = DirectoryHandler(tmdbApi)
     val movieHandler = MovieHandler()
     val accessManager = UserAccessManager()
     val logHandler = LogHandler()
@@ -34,9 +37,15 @@ fun main() {
                 post("logout", accessManager::logout, Role.AUTHENTICATED)
             }
             path("api") {
-                post("search", miscHandler::search, Role.AUTHENTICATED)
-                path("movie") {
-                    crud("{movie-id}", movieHandler, Role.AUTHENTICATED)
+                path("directory") {
+                    post("search", directoryHandler::search, Role.AUTHENTICATED)
+                    get("movie/{$ID}", directoryHandler::getMovie, Role.AUTHENTICATED)
+                    get("series/{$ID}", directoryHandler::getSeries, Role.AUTHENTICATED)
+                }
+                path("saved") {
+                    path("movie") {
+                        crud("{$ID}", movieHandler, Role.AUTHENTICATED)
+                    }
                 }
             }
         }
@@ -50,5 +59,6 @@ fun genericResponse(code: String): Map<String, String> {
 private fun javalinJackson(): JavalinJackson {
     val javalinJackson = JavalinJackson()
     javalinJackson.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    javalinJackson.mapper.registerModule(KotlinModule.Builder().build())
     return javalinJackson
 }
