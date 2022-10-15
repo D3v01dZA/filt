@@ -1,21 +1,29 @@
 package net.filt
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import io.github.cdimascio.dotenv.Dotenv
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.*
+import io.javalin.json.JavalinJackson
 import net.filt.handler.*
 import net.filt.model.initDB
+import net.filt.tmdb.TmdbApi
+import okhttp3.OkHttpClient
 
 fun main() {
     val dotenv = Dotenv.load()
+    val javalinJackson = javalinJackson()
     initDB(dotenv)
-    val miscHandler = MiscHandler()
+    val httpClient = OkHttpClient()
+    val tmdbApi = TmdbApi(dotenv, httpClient, javalinJackson)
+    val miscHandler = MiscHandler(tmdbApi)
     val movieHandler = MovieHandler()
     val accessManager = UserAccessManager()
     val logHandler = LogHandler()
 
-    Javalin.create { config ->
-        config.accessManager(accessManager)
+    Javalin.create {
+        it.accessManager(accessManager)
+        it.jsonMapper(javalinJackson)
     }
         .before(logHandler::before)
         .after(logHandler::after)
@@ -33,4 +41,14 @@ fun main() {
             }
         }
         .start(Integer.parseInt(dotenv.get("port")))
+}
+
+fun genericResponse(code: String): Map<String, String> {
+    return mapOf(Pair("code", code))
+}
+
+private fun javalinJackson(): JavalinJackson {
+    val javalinJackson = JavalinJackson()
+    javalinJackson.mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    return javalinJackson
 }

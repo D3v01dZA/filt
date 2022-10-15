@@ -4,6 +4,7 @@ import io.javalin.http.Context
 import io.javalin.http.Handler
 import io.javalin.security.AccessManager
 import io.javalin.security.RouteRole
+import net.filt.genericResponse
 import net.filt.model.UserModel
 import net.filt.model.UsersModel
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -23,9 +24,9 @@ class UserAccessManager : AccessManager {
                     username = credentialsRequest.username
                     password = encoder.encode(credentialsRequest.password)
                 }
-                ctx.status(200).json(Result("Success"))
+                ctx.status(200).json(genericResponse("Success"))
             } else {
-                ctx.status(400).json(Result("Exists"))
+                ctx.status(400).json(genericResponse("Exists"))
             }
         }
     }
@@ -36,16 +37,16 @@ class UserAccessManager : AccessManager {
             val user: UserModel? = UserModel.find{ UsersModel.username eq credentialsRequest.username }.firstOrNull()
             if (user != null && encoder.matches(credentialsRequest.password, user.password)) {
                 ctx.sessionAttribute("userId", user.id.value)
-                ctx.status(200).json(Result("Success"))
+                ctx.status(200).json(genericResponse("Success"))
             } else {
-                ctx.status(401).json(Result("Unauthorized"))
+                ctx.status(401).json(genericResponse("Unauthorized"))
             }
         }
     }
 
     fun logout(ctx: Context) {
         ctx.consumeSessionAttribute<UUID>("userId")
-        ctx.status(200).json(Result("Success"))
+        ctx.status(200).json(genericResponse("Success"))
     }
 
     override fun manage(handler: Handler, ctx: Context, routeRoles: Set<RouteRole>) {
@@ -53,7 +54,7 @@ class UserAccessManager : AccessManager {
         if (routeRoles.contains(Role.ANYONE) || (routeRoles.contains(Role.AUTHENTICATED) && userId != null)) {
             handler.handle(ctx)
         } else {
-            ctx.status(401).json(Result("Unauthorized"))
+            ctx.status(401).json(genericResponse("Unauthorized"))
         }
     }
 

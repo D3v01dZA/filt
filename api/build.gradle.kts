@@ -25,6 +25,7 @@ dependencies {
     implementation("org.springframework.security:spring-security-crypto:5.7.3")
     implementation("io.github.cdimascio:dotenv-kotlin:6.3.1")
     implementation("commons-logging:commons-logging:1.2")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
 }
 
 tasks.test {
